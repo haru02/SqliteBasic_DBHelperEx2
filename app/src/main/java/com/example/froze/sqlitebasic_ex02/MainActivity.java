@@ -10,6 +10,8 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.EditText;
 
+import java.util.ArrayList;
+
 public class MainActivity extends AppCompatActivity {
 
     private static final String DB_NAME = "SQLite.db";
@@ -17,6 +19,10 @@ public class MainActivity extends AppCompatActivity {
 
     WordDBHelper mHelper;
     EditText mText;
+    MyData myData;
+    ArrayList<MyData> myDataArrayList;
+
+    int i=0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -29,42 +35,44 @@ public class MainActivity extends AppCompatActivity {
 
     public void mOnClick(View v){
         SQLiteDatabase db;
-        ContentValues row;
+        myData = new MyData();
+        myDataArrayList = new ArrayList<>();
+
         switch(v.getId()){
             case R.id.insert :
                 db = mHelper.getWritableDatabase();
-                row = new ContentValues();
-                row.put("eng", "apple");
-                row.put("han", "사과");
-                db.insert("dic", null, row);
-                db.execSQL("insert into dic values (null, 'grape', '포도')");
+                myData.title = "제목"+i;
+                myData.name = "이름" +i;
+                myDataArrayList.add(myData);
+                db.execSQL("insert into bbs6(title,name) values ('"+myData.title+"','"+myData.name+"')");
+                //db.execSQL("insert into bbs6(title,name) values ('"+myData.title+"','"+myData.name+"')");
+                i++;
                 mHelper.close();;
                 mText.setText("Insert Success");
                 break;
             case R.id.delete :
                 db = mHelper.getWritableDatabase();
-                db.delete("dic", null, null);
+                db.delete("bbs6", null, null);
                 mHelper.close();
                 mText.setText("Delete Success");
                 break;
             case R.id.update :
                 db = mHelper.getWritableDatabase();
-                row = new ContentValues();
-                row.put("han", "애플");
-                db.update("dic", row, "eng='apple'", null);
+                db.execSQL("update bbs6 set name='이름0',title='수정제목' where name='이름0'");
                 mHelper.close();
                 mText.setText("Update Sucess");
                 break;
             case R.id.select :
                 db = mHelper.getReadableDatabase();
                 Cursor cursor;
-                cursor = db.rawQuery("select eng, han from dic", null);
+                cursor = db.rawQuery("select title, name, ndate from bbs6", null);
 
                 String result = "";
                 while(cursor.moveToNext()){
-                    String eng = cursor.getString(0);
-                    String han = cursor.getString(1);
-                    result += (eng + " = " + han + "\n");
+                    String title = cursor.getString(0);
+                    String name = cursor.getString(1);
+                    String ndate = cursor.getString(2);
+                    result += (title + " = " + name + " " + ndate + "\n");
                 }
 
                 if(result.length() == 0){
@@ -81,26 +89,3 @@ public class MainActivity extends AppCompatActivity {
 }
 
 
-
-class WordDBHelper extends SQLiteOpenHelper{
-
-    String name;
-    int version;
-
-    public WordDBHelper(Context context, String name, SQLiteDatabase.CursorFactory factory, int version) {
-        super(context, name, null, version);
-        this.name = name;
-        this.version = version;
-    }
-
-    @Override
-    public void onCreate(SQLiteDatabase db) {
-        db.execSQL("create table dic ( _id integer primary key autoincrement, eng text, han text)");
-    }
-
-    @Override
-    public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-        db.execSQL("drop table if exists dic");
-        onCreate(db);
-    }
-}
